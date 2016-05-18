@@ -19,7 +19,8 @@ def read_parameters():
         print('Enter the file_path')
         exit()
     elif len(args) == 2:
-        uipath = unicode(args[1], 'utf-8')
+        uipath = args[1]
+        uipath.encode('UTF-8', errors='strict')
         return uipath
     else:
         print('Too many arguments')
@@ -29,11 +30,11 @@ def open_excel(uifile):
     try:
         data = xlrd.open_workbook(uifile)
         return data
-    except Exception, e:
-        print str(e)
+    except Exception as e:
+        print('open file error:'.format(e))
 
 def create_label():
-    uipath = unicode('E:/work/办公室/2016/研究院/黄疸待查/27种疾病', 'utf-8')
+    uipath = uipath = 'E:/work/办公室/2016/研究院/黄疸待查/27种疾病'.encode('UTF-8', errors='strict')
     dict_labels = {}
     for fpathe, dirs, fs in os.walk(uipath):
         for f in fs:
@@ -64,9 +65,8 @@ def load2matrix(dict_labels):
         if counter > 100:
             break
         else:
-            uipath = unicode('E:/work/办公室/2016/研究院/黄疸待查/27种疾病/', 'utf-8')
+            uipath = 'E:/work/办公室/2016/研究院/黄疸待查/27种疾病'.encode('UTF-8', errors='strict')
             uifile = uipath + key
-            print uifile
             data = open_excel(uifile)
             table = data.sheets()[0]
             nrows = table.nrows
