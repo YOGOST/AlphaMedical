@@ -6,7 +6,7 @@ load2matrix()：循环读取目录下excel内容，把原始数据装配到matri
 conv2disc()：把excel中的原始数据转化为离散形式
 """
 
-import xlrd
+import xlrd, xlwt
 import numpy as np
 import pickle
 import sys
@@ -32,9 +32,88 @@ def open_excel(uifile):
         return data
     except Exception as e:
         print('open file error:'.format(e))
+        
+def load2matrix(uifile):
+    '''
+    load ./data/3种疾病综合.xls to matrix        
+    '''
+      
+    data = open_excel(uifile)    
+    table = data.sheets()[0]
+    nrows = table.nrows
+    ncols = table.ncols
+    
+    patients_matrix = np.zeros((nrows, ncols))    #nrows means feature, ncols means sample  
+    for row_idx in range(1, nrows):  #discard the table head
+        row = table.row_values(row_idx)
+        if row:
+            for col_idx in range(5, ncols):  #because the sixth column is the first patient  
+                value = row[col_idx]              
+                if value > 0:
+                    patients_matrix[row_idx][col_idx] = value
+                    #print('PRM[%d][%d]: %f' %(row_idx, col_idx, value))
+    return patients_matrix
+    
+    
+def load2list(uifile):
+    '''
+    etract sample from ./data/3种疾病综合.xls to patients list, every element
+    is a dictionary of patient which contain all raw features.
+    '''
+    
+    data = open_excel(uifile)    
+    table = data.sheets()[0]
+    ncols = table.ncols
+    raw_features = table.col_values(3)  #得到专家确定的特征，位于原始excel的第4列
+    del(raw_features[0])
+    features_len = len(raw_features)
+    patients = []
+    for i in range(5, ncols-1):    #把每个列sample装配到list的元素，并与feature（第四列）对齐
+        sample = table.col_values(i)
+        del(sample[0])
+        patient = {}
+        for j in range(features_len):
+            patient.setdefault(raw_features[j], sample[j])
+            #print(raw_features[j], sample[j])
+        
+        patients.append(patient)
+    
+    return patients
+
+def row_col_trans(uifile):
+    '''
+    把 excel的行列互换
+    '''    
+    
+    data = open_excel(uifile)    
+    table = data.sheets()[0]
+    raw_features = table.col_values(3)  #得到专家确定的特征，位于原始excel的第4列
+    del(raw_features[0])
+    
+    new_excel_file = xlwt.Workbook(encoding='utf-8', style_compression=0)
+    sheet = new_excel_file.add_sheet('sheet1')    
+    style = xlwt.XFStyle()
+    font = xlwt.Font()
+    font.name = 'Time New Roman'
+    style.font = font
+    
+    for i in range(len(raw_features)):
+        print('feature %d is %s' %(i, raw_features[i]))
+        sheet.write(0, i, raw_features[i], style)
+    
+    new_excel_file.save('./Data/threeDisease.xls')
+    
+    '''
+    print(len(raw_features))
+    print(raw_features[0])
+    print(table.cell_value(5,6))
+    '''
+       
+
+    
 
 def create_label():
-    uipath = uipath = 'E:/work/办公室/2016/研究院/黄疸待查/27种疾病'.encode('UTF-8', errors='strict')
+    uipath = './data/3种疾病综合'.encode('UTF-8', errors='strict')
     dict_labels = {}
     for fpathe, dirs, fs in os.walk(uipath):
         for f in fs:
@@ -55,6 +134,7 @@ def conv2disc(valveStr):
     else:
         return 0
 
+'''
 def load2matrix(dict_labels):
     counter = 0
     PRM = np.zeros((450, 270), dtype=int)    #病人记录matrix
@@ -65,7 +145,7 @@ def load2matrix(dict_labels):
         if counter > 100:
             break
         else:
-            uipath = 'E:/work/办公室/2016/研究院/黄疸待查/27种疾病'.encode('UTF-8', errors='strict')
+            uipath = './data/3种疾病综合'.encode('UTF-8', errors='strict')
             uifile = uipath + key
             data = open_excel(uifile)
             table = data.sheets()[0]
@@ -94,14 +174,15 @@ def load2matrix(dict_labels):
         counter += 1
 
     return PRM
+'''    
 
 if __name__ == '__main__':
-    #print conv2disc('重度')
+    patients = load2dict('./data/3种疾病综合.xls')
     #uipath = read_parameters()
-    dict_labels = create_label()
-    PRL = load2matrix(dict_labels)
-    with open('D:/dev/pydev/BetaDoctor/data/raw_matrix.dat', 'wb') as f:
-        pickle.dump(PRL, f)
+    #row_col_trans('./data/3种疾病综合.xls')
+    #PRL = load2matrix(dict_labels)
+    #with open('D:/dev/pydev/BetaDoctor/data/raw_matrix.dat', 'wb') as f:
+        #pickle.dump(PRL, f)
 
 #with open('D:/dev/AliMusic/data/cube_download.dat', 'wb') as f:
 #    pickle.dump(CUBE_DOWNLOAD, f)
