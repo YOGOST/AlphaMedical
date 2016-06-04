@@ -67,13 +67,17 @@ def load2list(uifile):
     
 def conv2matrix(patients):
     '''
-    extract feature from patient list, all of these features are not real feature, ther are preprocessed by expert
+    extract feature from patient list, all of these features are not real feature, they are preprocessed by expert
     binary value feature: 0 means missing value or negative, and 1 means positive 
     category value feature: e.g. sex should be regarded one value as one featue 
     real value feature: age should be normalized
     rank value feature: could be set from 1 to n  
     '''    
-    
+    for i in range(len(patients)):
+        for j in range(len(patients[i])):
+            if patients[i][j] == '':
+                patients[i][j] = 0  #process binary value feature
+                patients[i][j] = conv2int(patients[i][j])   #process rank value feature
     vec = DictVectorizer()
     # set 0 for missing value, check age normalization and rank 
     return vec.fit_transform(patients).toarray()    
@@ -127,12 +131,14 @@ def create_label():
 def conv2int(valveStr):
     if len(valveStr) == 0:
         return 0
-    elif '轻度' in valveStr:
+    elif '亚临床' in valveStr:
         return 1
+    elif '轻度' in valveStr:
+        return 2
     elif '极重度' in valveStr:
         return 3
     elif '重度' in valveStr:
-        return 2
+        return 4
     else:
         return 0
         
