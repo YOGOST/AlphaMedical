@@ -9,10 +9,11 @@ conv2disc()：把excel中的原始数据转化为离散形式
 import xlrd, xlwt
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
+from sklearn import preprocessing
 import pickle
 import sys
 import os
-import types
+
 
 def read_parameters():
     args = sys.argv
@@ -74,14 +75,18 @@ def conv2matrix(patients):
     rank value feature: could be set from 1 to n  
     '''    
     for i in range(len(patients)):
-        for j in range(len(patients[i])):
-            if patients[i][j] == '':
-                patients[i][j] = 0  #process binary value feature
-                patients[i][j] = conv2int(patients[i][j])   #process rank value feature
+        for key in patients[i]:
+            if patients[i][key] == '':
+                patients[i][key] = 0  #process binary value feature            
+            patients[i][key] = rank2int(patients[i][key])   #process rank value feature
     vec = DictVectorizer()
-    # set 0 for missing value, check age normalization and rank 
-    return vec.fit_transform(patients).toarray()    
+    patients_matrix = vec.fit_transform(patients).toarray() 
+    min_max_scaler = preprocessing.MinMaxScaler()
+    patrients_matrix_minmax = min_max_scaler.fit_transform(patients_matrix)
     #vec.get_feature_names()
+    # set 0 for missing value, check age normalization and rank 
+    return patrients_matrix_minmax
+    
     
     
 
@@ -128,19 +133,17 @@ def create_label():
     
     
 
-def conv2int(valveStr):
-    if len(valveStr) == 0:
-        return 0
-    elif '亚临床' in valveStr:
+def rank2int(valveStr):
+    if valveStr == '亚临床'.decode('UTF-8'):
         return 1
-    elif '轻度' in valveStr:
+    elif valveStr == '轻度'.decode('UTF-8'):
         return 2
-    elif '极重度' in valveStr:
+    elif valveStr == '极重度'.decode('UTF-8'):
         return 3
-    elif '重度' in valveStr:
+    elif valveStr == '重度'.decode('UTF-8'):
         return 4
     else:
-        return 0
+        return valveStr
         
         
         
@@ -210,7 +213,7 @@ def load2matrix(dict_labels):
 '''    
 
 if __name__ == '__main__':
-    patients = load2list('./data/3种疾病综合.xls')
+    patients = load2list('./data/3.xls')
     conv2matrix(patients)
     
     #uipath = read_parameters()
