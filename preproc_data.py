@@ -48,7 +48,7 @@ def load2list(uifile):
     data = open_excel(uifile)    
     table = data.sheets()[0]
     ncols = table.ncols
-    raw_features = table.col_values(3)  #得到专家确定的特征，位于原始excel的第4列
+    raw_features = table.col_values(3)  #得到专家确定的特征，位于原始excel的第4列    
     del(raw_features[0])
     features_len = len(raw_features)
     patients = []
@@ -58,6 +58,7 @@ def load2list(uifile):
         patient = {}
         for j in range(features_len):
             patient.setdefault(raw_features[j], sample[j])
+            #patient[raw_features[j]] = sample[j]
             #print(raw_features[j], sample[j])
         
         patients.append(patient)
@@ -66,28 +67,57 @@ def load2list(uifile):
     
     
     
-def conv2matrix(patients):
+def conv2matrix(patients, type='z-score'):
     '''
     extract feature from patient list, all of these features are not real feature, they are preprocessed by expert
-    binary value feature: 0 means missing value or negative, and 1 means positive 
+    missing value: set 0 when style is 'z-score', and set nan when style is 'min-max'
+    binary value feature: 0 means negative, and 1 means positive 
     category value feature: e.g. sex should be regarded one value as one featue 
     real value feature: age should be normalized
     rank value feature: could be set from 1 to n  
+    the parameter of type is comprised of 'z-score' and 'min-max' 
     '''    
-    for i in range(len(patients)):
-        for key in patients[i]:
-            if patients[i][key] == '':
-                patients[i][key] = 0  #process binary value feature            
-            patients[i][key] = rank2int(patients[i][key])   #process rank value feature
-    vec = DictVectorizer()
-    patients_matrix = vec.fit_transform(patients).toarray() 
-    min_max_scaler = preprocessing.MinMaxScaler()
-    patrients_matrix_minmax = min_max_scaler.fit_transform(patients_matrix)
-    #vec.get_feature_names()
-    # set 0 for missing value, check age normalization and rank 
-    return patrients_matrix_minmax
-    
-    
+
+    #standardization
+    if type == 'z-score':
+        for i in range(len(patients)):
+            for key in patients[i]:
+                if patients[i][key] == '':
+                    patients[i][key] = 0  #process missing value 
+                    #process rank value feature
+                patients[i][key] = rank2int(patients[i][key]) 
+        # process category value feature                
+        vec = DictVectorizer()
+        patients_matrix = vec.fit_transform(patients).toarray()                 
+        patients_matrix_std = preprocessing.scale(patients_matrix)
+        
+    elif type == 'min-max':
+        for i in range(len(patients)):
+            for key in patients[i]:
+                if patients[i][key] == '':
+                    patients[i][key] = 0  #process missing value notice:min-max don't support NaN now
+                    #process rank value feature
+                patients[i][key] = rank2int(patients[i][key]) 
+        # process category value feature          
+        vec = DictVectorizer()
+        patients_matrix = vec.fit_transform(patients).toarray()                
+        min_max_scaler = preprocessing.MinMaxScaler()
+        patients_matrix_std = min_max_scaler.fit_transform(patients_matrix)
+        
+    #record the feature with index using dictionary  
+    feature_idx = {}    
+    feature_names = vec.get_feature_names()        
+    for i in range(len(feature_names)):
+        #print(feature_names[i])        
+        feature_idx[feature_names[i]] = i
+    return patients_matrix_std, feature_idx
+
+
+
+def save(patients_matrix_std, feature_idx):
+    with open('./data/patients_matrix.pickle', 'wb') as f:
+        pickle.dump(patients_matrix_std, f)
+        pickle.dump(feature_idx, f)
     
 
 def row_col_trans(uifile):
@@ -214,7 +244,8 @@ def load2matrix(dict_labels):
 
 if __name__ == '__main__':
     patients = load2list('./data/3.xls')
-    conv2matrix(patients)
+    [patients_matrix_std, feature_idx] = conv2matrix(patients, type='min-max')
+    save(patients_matrix_std, feature_idx)
     
     #uipath = read_parameters()
     #row_col_trans('./data/3种疾病综合.xls')
