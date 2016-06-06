@@ -8,14 +8,17 @@ load2matrix()：循环读取目录下excel内容，把原始数据装配到matri
 conv2disc()：把excel中的原始数据转化为离散形式
 """
 
-import os
 import sys
+import pickle as pk
 import numpy as np
 import scipy as sp
 import sklearn as sl
 
-#sl.naive_bayes.BernoulliNB
 
-iris = sl.datasets.load_iris()
+#load data
+def load_data():
+    with open('./data/patients_matrix.pickle', 'rb') as f:
+        patients_matrix_std = pk.load(f)
+        feature_idx = pk.load(f)
 
 

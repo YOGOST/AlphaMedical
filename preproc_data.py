@@ -12,7 +12,7 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn import preprocessing
 import pickle
 import sys
-import os
+
 
 
 def read_parameters():
@@ -120,47 +120,6 @@ def save(patients_matrix_std, feature_idx):
         pickle.dump(feature_idx, f)
     
 
-def row_col_trans(uifile):
-    '''
-    把 excel的行列互换
-    '''    
-    
-    data = open_excel(uifile)    
-    table = data.sheets()[0]
-    raw_features = table.col_values(3)  #得到专家确定的特征，位于原始excel的第4列
-    del(raw_features[0])
-    
-    new_excel_file = xlwt.Workbook(encoding='utf-8', style_compression=0)
-    sheet = new_excel_file.add_sheet('sheet1')    
-    style = xlwt.XFStyle()
-    font = xlwt.Font()
-    font.name = 'Time New Roman'
-    style.font = font
-    
-    for i in range(len(raw_features)):
-        print('feature %d is %s' %(i, raw_features[i]))
-        sheet.write(0, i, raw_features[i], style)
-    
-    new_excel_file.save('./Data/threeDisease.xls')
-    
-    '''
-    print(len(raw_features))
-    print(raw_features[0])
-    print(table.cell_value(5,6))
-    '''
-       
-
-
-def create_label():
-    uipath = './data/3种疾病综合'.encode('UTF-8', errors='strict')
-    dict_labels = {}
-    for fpathe, dirs, fs in os.walk(uipath):
-        for f in fs:
-            #label = f.split('.')
-            dict_labels.setdefault(f, len(dict_labels))
-
-    return dict_labels
-    
     
 
 def rank2int(valveStr):
@@ -198,6 +157,36 @@ def load2matrix(uifile):
                     #print('PRM[%d][%d]: %f' %(row_idx, col_idx, value))
     return patients_matrix
 
+
+
+def row_col_trans(uifile):
+    '''
+    把 excel的行列互换
+    '''    
+    
+    data = open_excel(uifile)    
+    table = data.sheets()[0]
+    raw_features = table.col_values(3)  #得到专家确定的特征，位于原始excel的第4列
+    del(raw_features[0])
+    
+    new_excel_file = xlwt.Workbook(encoding='utf-8', style_compression=0)
+    sheet = new_excel_file.add_sheet('sheet1')    
+    style = xlwt.XFStyle()
+    font = xlwt.Font()
+    font.name = 'Time New Roman'
+    style.font = font
+    
+    for i in range(len(raw_features)):
+        print('feature %d is %s' %(i, raw_features[i]))
+        sheet.write(0, i, raw_features[i], style)
+    
+    new_excel_file.save('./Data/threeDisease.xls')
+    
+    '''
+    print(len(raw_features))
+    print(raw_features[0])
+    print(table.cell_value(5,6))
+    '''
 
     
 '''
