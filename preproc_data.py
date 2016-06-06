@@ -122,17 +122,29 @@ def save(patients_matrix_std, feature_idx):
 
     
 
-def rank2int(valveStr):
-    if valveStr == '亚临床'.decode('UTF-8'):
-        return 1
-    elif valveStr == '轻度'.decode('UTF-8'):
-        return 2
-    elif valveStr == '极重度'.decode('UTF-8'):
-        return 3
-    elif valveStr == '重度'.decode('UTF-8'):
-        return 4
-    else:
-        return valveStr
+def rank2int(valStr):
+    if sys.version_info[0] == 2:
+        if valStr == '亚临床'.decode('UTF-8'):
+            return 1
+        elif valStr == '轻度'.decode('UTF-8'):
+            return 2
+        elif valStr == '极重度'.decode('UTF-8'):
+            return 3
+        elif valStr == '重度'.decode('UTF-8'):
+            return 4
+        else:
+            return valStr
+    elif sys.version_info[0] == 3:
+        if valStr == '亚临床':
+            return 1
+        elif valStr == '轻度':
+            return 2
+        elif valStr == '极重度':
+            return 3
+        elif valStr == '重度':
+            return 4
+        else:
+            return valStr
         
         
         

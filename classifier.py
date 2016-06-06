@@ -16,9 +16,10 @@ import sklearn as sl
 
 
 #load data
-def load_data():
-    with open('./data/patients_matrix.pickle', 'rb') as f:
-        patients_matrix_std = pk.load(f)
-        feature_idx = pk.load(f)
+class Classifier(object):
+    def __init__(self):
+        with open('./data/patients_matrix.pickle', 'rb') as f:
+            self.patients_matrix_std = pk.load(f)
+            self.feature_idx = pk.load(f)
 
 
