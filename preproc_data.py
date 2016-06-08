@@ -8,6 +8,7 @@ conv2disc()：把excel中的原始数据转化为离散形式
 
 import xlrd, xlwt
 import numpy as np
+from sklearn.feature_extraction import DictVectorizer
 import pickle
 import sys
 import os
@@ -25,6 +26,8 @@ def read_parameters():
     else:
         print('Too many arguments')
         exit()
+        
+        
 
 def open_excel(uifile):
     try:
@@ -33,31 +36,11 @@ def open_excel(uifile):
     except Exception as e:
         print('open file error:'.format(e))
         
-def load2matrix(uifile):
-    '''
-    load ./data/3种疾病综合.xls to matrix        
-    '''
-      
-    data = open_excel(uifile)    
-    table = data.sheets()[0]
-    nrows = table.nrows
-    ncols = table.ncols
-    
-    patients_matrix = np.zeros((nrows, ncols))    #nrows means feature, ncols means sample  
-    for row_idx in range(1, nrows):  #discard the table head
-        row = table.row_values(row_idx)
-        if row:
-            for col_idx in range(5, ncols):  #because the sixth column is the first patient  
-                value = row[col_idx]              
-                if value > 0:
-                    patients_matrix[row_idx][col_idx] = value
-                    #print('PRM[%d][%d]: %f' %(row_idx, col_idx, value))
-    return patients_matrix
-    
+   
     
 def load2list(uifile):
     '''
-    etract sample from ./data/3种疾病综合.xls to patients list, every element
+    load sample from ./data/3种疾病综合.xls into patients list, every element
     is a dictionary of patient which contain all raw features.
     '''
     
@@ -79,6 +62,24 @@ def load2list(uifile):
         patients.append(patient)
     
     return patients
+    
+    
+    
+def conv2matrix(patients):
+    '''
+    extract feature from patient list, all of these features are not real feature, ther are preprocessed by expert
+    binary value feature: 0 means missing value or negative, and 1 means positive 
+    category value feature: e.g. sex should be regarded one value as one featue 
+    real value feature: age should be normalized
+    rank value feature: could be set from 1 to n  
+    '''    
+    
+    vec = DictVectorizer()
+    # set 0 for missing value, check age normalization and rank 
+    return vec.fit_transform(patients).toarray()    
+    #vec.get_feature_names()
+    
+    
 
 def row_col_trans(uifile):
     '''
@@ -110,7 +111,6 @@ def row_col_trans(uifile):
     '''
        
 
-    
 
 def create_label():
     uipath = './data/3种疾病综合'.encode('UTF-8', errors='strict')
@@ -121,8 +121,10 @@ def create_label():
             dict_labels.setdefault(f, len(dict_labels))
 
     return dict_labels
+    
+    
 
-def conv2disc(valveStr):
+def conv2int(valveStr):
     if len(valveStr) == 0:
         return 0
     elif '轻度' in valveStr:
@@ -133,7 +135,32 @@ def conv2disc(valveStr):
         return 2
     else:
         return 0
+        
+        
+        
+def load2matrix(uifile):
+    '''
+    load ./data/3种疾病综合.xls to matrix        
+    '''
+      
+    data = open_excel(uifile)    
+    table = data.sheets()[0]
+    nrows = table.nrows
+    ncols = table.ncols
+    
+    patients_matrix = np.zeros((nrows, ncols))    #nrows means feature, ncols means sample  
+    for row_idx in range(1, nrows):  #discard the table head
+        row = table.row_values(row_idx)
+        if row:
+            for col_idx in range(5, ncols):  #because the sixth column is the first patient  
+                value = row[col_idx]              
+                if value > 0:
+                    patients_matrix[row_idx][col_idx] = value
+                    #print('PRM[%d][%d]: %f' %(row_idx, col_idx, value))
+    return patients_matrix
 
+
+    
 '''
 def load2matrix(dict_labels):
     counter = 0
@@ -177,7 +204,9 @@ def load2matrix(dict_labels):
 '''    
 
 if __name__ == '__main__':
-    patients = load2dict('./data/3种疾病综合.xls')
+    patients = load2list('./data/3种疾病综合.xls')
+    conv2matrix(patients)
+    
     #uipath = read_parameters()
     #row_col_trans('./data/3种疾病综合.xls')
     #PRL = load2matrix(dict_labels)
