@@ -7,12 +7,14 @@ conv2disc()：把excel中的原始数据转化为离散形式
 """
 
 import xlrd, xlwt
-import numpy as np
-from sklearn.feature_extraction import DictVectorizer
-from sklearn import preprocessing
 import pickle
 import sys
-
+import numpy as np
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_selection import VarianceThreshold
+from sklearn import preprocessing
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
 
 
 def read_parameters():
@@ -41,7 +43,7 @@ def open_excel(uifile):
     
 def load2list(uifile):
     '''
-    load sample from ./data/3种疾病综合.xls into patients list, every element
+    load sample from ./data/3.xls into patients list, every element
     is a dictionary of patient which contain all raw features.
     '''
     
@@ -67,7 +69,7 @@ def load2list(uifile):
     
     
     
-def conv2matrix(patients, type='z-score'):
+def conv2matrix(patients, sta_type='z-score', sel_type='var', threshold=.8, feature_k=30):
     '''
     extract feature from patient list, all of these features are not real feature, they are preprocessed by expert
     missing value: set 0 when style is 'z-score', and set nan when style is 'min-max'
@@ -76,54 +78,78 @@ def conv2matrix(patients, type='z-score'):
     real value feature: age should be normalized
     rank value feature: could be set from 1 to n  
     the parameter of type is comprised of 'z-score' and 'min-max' 
+    the parameter of threshold is between 0 and 1
+    return patients_matrix_std: the standardization of patients matrix
+    return features_dict: the dictionary consist of the names and indexes of features will be fed to classifier
     '''    
+    
+    #process the missing value and the rank value feature
+    for i in range(len(patients)):
+        for key in patients[i]:
+            if patients[i][key] == '':
+                patients[i][key] = 0  #process missing value 
+            patients[i][key] = rank2int(patients[i][key])   #process rank value feature
+    #process the category value feature and convert patients' dictionary to matrix
+    vec = DictVectorizer()
+    patients_matrix = vec.fit_transform(patients).toarray()          
 
-    #standardization
-    if type == 'z-score':
-        for i in range(len(patients)):
-            for key in patients[i]:
-                if patients[i][key] == '':
-                    patients[i][key] = 0  #process missing value 
-                    #process rank value feature
-                patients[i][key] = rank2int(patients[i][key]) 
-        # process category value feature                
-        vec = DictVectorizer()
-        patients_matrix = vec.fit_transform(patients).toarray()                 
-        patients_matrix_std = preprocessing.scale(patients_matrix)
-        
-    elif type == 'min-max':
-        for i in range(len(patients)):
-            for key in patients[i]:
-                if patients[i][key] == '':
-                    patients[i][key] = 0  #process missing value notice:min-max don't support NaN now
-                    #process rank value feature
-                patients[i][key] = rank2int(patients[i][key]) 
-        # process category value feature          
-        vec = DictVectorizer()
-        patients_matrix = vec.fit_transform(patients).toarray()                
+    #feature selection
+    if sel_type == 'var':
+        sel = VarianceThreshold(threshold=(threshold * (1 - threshold)))
+        patients_matrix_sel = sel.fit_transform(patients_matrix)
+    elif sel_type == 'uni':
+        y = [1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3]
+        sel = SelectKBest(chi2, feature_k)
+        patients_matrix_sel = sel.fit_transform(patients_matrix, y)
+            
+    features_dict = get_features(vec, sel)    
+    #print(features_dict)
+    
+    #feature standardization
+    if sta_type == 'z-score':
+        patients_matrix_std = preprocessing.scale(patients_matrix)        
+    elif sta_type == 'min-max':
         min_max_scaler = preprocessing.MinMaxScaler()
-        patients_matrix_std = min_max_scaler.fit_transform(patients_matrix)
+        patients_matrix_std = min_max_scaler.fit_transform(patients_matrix_sel)
+
+    return patients_matrix_std, features_dict
         
-    #record the feature with index using dictionary  
-    feature_idx = {}    
-    feature_names = vec.get_feature_names()        
-    for i in range(len(feature_names)):
-        #print(feature_names[i])        
-        feature_idx[feature_names[i]] = i
-    return patients_matrix_std, feature_idx
+
+    
+    
+def get_features(vec, sel):
+    '''
+    parameter of vec contain the features name before feature selection
+    parameter of sel is the outcome of feature selection 
+    return the dictionary consist of the names and indexes of features will be fed to classifier
+    '''    
+    #keys = patients_dict.keys()
+    features_name_list = vec.get_feature_names() 
+    features_idx = sel.get_support(True).tolist()
+    features_dict = {}
+    
+    for i in range(len(features_idx)):
+        idx = features_idx[i]
+        key = features_name_list[idx]
+        #print("the feature_%d selected is: %s" % (idx, key))
+        features_dict[key] = idx
+
+    return features_dict    
 
 
 
-def save(patients_matrix_std, feature_idx):
+
+def save(patients_matrix_std, features_dict):
     with open('./data/patients_matrix.pickle', 'wb') as f:
         pickle.dump(patients_matrix_std, f)
-        pickle.dump(feature_idx, f)
+        pickle.dump(features_dict, f)
     
 
     
 
 def rank2int(valStr):
     if sys.version_info[0] == 2:
+        #print(valStr)
         if valStr == '亚临床'.decode('UTF-8'):
             return 1
         elif valStr == '轻度'.decode('UTF-8'):
@@ -145,12 +171,13 @@ def rank2int(valStr):
             return 4
         else:
             return valStr
+            
         
         
         
 def load2matrix(uifile):
     '''
-    load ./data/3种疾病综合.xls to matrix        
+    load ./data/3.xls to matrix        
     '''
       
     data = open_excel(uifile)    
@@ -189,7 +216,7 @@ def row_col_trans(uifile):
     style.font = font
     
     for i in range(len(raw_features)):
-        print('feature %d is %s' %(i, raw_features[i]))
+        #print('feature %d is %s' %(i, raw_features[i]))
         sheet.write(0, i, raw_features[i], style)
     
     new_excel_file.save('./Data/threeDisease.xls')
@@ -245,8 +272,8 @@ def load2matrix(dict_labels):
 
 if __name__ == '__main__':
     patients = load2list('./data/3.xls')
-    [patients_matrix_std, feature_idx] = conv2matrix(patients, type='min-max')
-    save(patients_matrix_std, feature_idx)
+    [patients_matrix_std, features_dict] = conv2matrix(patients, sta_type='min-max', sel_type='var', threshold=.8)
+    save(patients_matrix_std, features_dict)
     
     #uipath = read_parameters()
     #row_col_trans('./data/3种疾病综合.xls')
