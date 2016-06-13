@@ -69,7 +69,7 @@ def load2list(uifile):
     
     
     
-def conv2matrix(patients, sta_type='z-score', sel_type='var', threshold=.8, feature_k=30):
+def conv2matrix(patients, target, sta_type='z-score', sel_type='var', threshold=.8, feature_k=30):
     '''
     extract feature from patient list, all of these features are not real feature, they are preprocessed by expert
     missing value: set 0 when style is 'z-score', and set nan when style is 'min-max'
@@ -98,9 +98,8 @@ def conv2matrix(patients, sta_type='z-score', sel_type='var', threshold=.8, feat
         sel = VarianceThreshold(threshold=(threshold * (1 - threshold)))
         patients_matrix_sel = sel.fit_transform(patients_matrix)
     elif sel_type == 'uni':
-        y = [1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3]
         sel = SelectKBest(chi2, feature_k)
-        patients_matrix_sel = sel.fit_transform(patients_matrix, y)
+        patients_matrix_sel = sel.fit_transform(patients_matrix, target)  
             
     features_dict = get_features(vec, sel)    
     #print(features_dict)
@@ -139,9 +138,10 @@ def get_features(vec, sel):
 
 
 
-def save(patients_matrix_std, features_dict):
+def save(patients_matrix_std, target, features_dict):
     with open('./data/patients_matrix.pickle', 'wb') as f:
         pickle.dump(patients_matrix_std, f)
+        pickle.dump(target, f)
         pickle.dump(features_dict, f)
     
 
@@ -272,21 +272,10 @@ def load2matrix(dict_labels):
 
 if __name__ == '__main__':
     patients = load2list('./data/3.xls')
-    [patients_matrix_std, features_dict] = conv2matrix(patients, sta_type='min-max', sel_type='var', threshold=.8)
-    save(patients_matrix_std, features_dict)
-    
-    #uipath = read_parameters()
-    #row_col_trans('./data/3种疾病综合.xls')
-    #PRL = load2matrix(dict_labels)
-    #with open('D:/dev/pydev/BetaDoctor/data/raw_matrix.dat', 'wb') as f:
-        #pickle.dump(PRL, f)
+    target = np.array([1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3])
+    [patients_matrix_std, features_dict] = conv2matrix(patients, target, sta_type='min-max', sel_type='var', threshold=.9)
+    #dropout age feature
+    patients_matrix_std = np.delete(patients_matrix_std, 18, 1)
+    del features_dict['年龄']
+    save(patients_matrix_std, target, features_dict)
 
-#with open('D:/dev/AliMusic/data/cube_download.dat', 'wb') as f:
-#    pickle.dump(CUBE_DOWNLOAD, f)
-#with open('D:/dev/AliMusic/data/cube_collect.dat', 'wb') as f:
-#    pickle.dump(CUBE_COLLECT, f)
-#
-#'''
-#with open('D:/dev/AliMusic/data/cube_play.dat', 'rb') as f:
-#    CUBE_PLAY = pickle.load(f)
-#'''
