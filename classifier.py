@@ -19,7 +19,7 @@ class Classifier(object):
     def __init__(self, typeStr):
         '''
         X refer to the trainset, Y refer to the target label of X, x refer to data in testset, and
-        y refer to the predicted label in testset.             
+        y refer to the real label in testset, y_hat refer to the predicted label            
         
         Parameters
         ----------
@@ -28,7 +28,7 @@ class Classifier(object):
         '''         
         self.X, self.Y, self.x, self.y = self.load_data()
         self.typeStr = typeStr
-        
+        self.y_hat = np.zeros(len(self.y))
         
         
     def load_data(self, tarin_test_sepa=.9):
@@ -42,6 +42,7 @@ class Classifier(object):
         with open('./data/patients_matrix.pickle', 'rb') as f:
             patients_matrix_std = pk.load(f)
             target = pk.load(f)
+            #features = pk.load(f)
             #randomly separate the patients matrix by row
             randint = random.randint(0, 9)
             x = patients_matrix_std[randint,:]
@@ -92,7 +93,7 @@ class Classifier(object):
             
             
             
-    def clssify(self, x):
+    def clssify(self):
         '''
         Parameters
         ----------
@@ -104,12 +105,12 @@ class Classifier(object):
         
         if self.typeStr == 'NB':
             clf = BernoulliNB()
-            clf.fit(self.X, self.Y)            
+            self.y_hat = clf.fit(self.X, self.Y)            
         elif self.typeStr == 'Tree':
             clf = tree.DecisionTreeClassifier()
-            clf = clf.fit(self.X, self.Y)
+            self.y_hat = clf.fit(self.X, self.Y)
             
-        return clf.predict(x)            
+        return clf.predict(self.y_hat)            
             
             
     '''        

@@ -8,4 +8,4 @@ Created on Mon Jun 13 17:14:59 2016
 import classifier as clf
 
 nb_clf = clf.Classifier('NB')
-
+y_hat = nb_clf.clssify()
