@@ -31,11 +31,15 @@ class Classifier(object):
         self.y_hat = np.zeros(len(self.y))
         
         
+        
+        
     def load_data(self, tarin_test_sepa=.9):
         '''
+        shuffle and split training and test sets        
+        
         Parameters
         ----------
-        tarin_test_sepa: the proportion of trainset         
+        tarin_test_sepa: the proportion of training set         
         
         '''        
         
@@ -58,7 +62,8 @@ class Classifier(object):
             patients_matrix_std = np.delete(patients_matrix_std, [randint_1, randint_2, randint_3], 0)
             #patients_matrix_std = np.delete(patients_matrix_std, randint_2, 0)
             #patients_matrix_std = np.delete(patients_matrix_std, randint_3, 0)
-            target = np.delete(target, [randint_1, randint_2, randint_3], 0)            
+            target = np.delete(target, [randint_1, randint_2, randint_3], 0) 
+            print([randint_1, randint_2, randint_3])
             
             col_len = len(x)/3
             x = x.reshape((3, col_len))

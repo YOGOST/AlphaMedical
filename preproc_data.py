@@ -111,7 +111,7 @@ def conv2matrix(patients, target, sta_type='z-score', sel_type='var', threshold=
         min_max_scaler = preprocessing.MinMaxScaler()
         patients_matrix_std = min_max_scaler.fit_transform(patients_matrix_sel)
 
-    return patients_matrix_std, features_dict
+    return patients_matrix_std, features_dict, patients_matrix
         
 
     
@@ -138,11 +138,12 @@ def get_features(vec, sel):
 
 
 
-def save(patients_matrix_std, target, features_dict):
+def save(patients_matrix_std, target, features_dict, patients_matrix):
     with open('./data/patients_matrix.pickle', 'wb') as f:
         pickle.dump(patients_matrix_std, f)
         pickle.dump(target, f)
         pickle.dump(features_dict, f)
+        pickle.dump(patients_matrix, f)
     
 
     
@@ -273,9 +274,9 @@ def load2matrix(dict_labels):
 if __name__ == '__main__':
     patients = load2list('./data/3.xls')
     target = np.array([1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3])
-    [patients_matrix_std, features_dict] = conv2matrix(patients, target, sta_type='min-max', sel_type='var', threshold=.9)
+    [patients_matrix_std, features_dict, patients_matrix] = conv2matrix(patients, target, sta_type='min-max', sel_type='var', threshold=.9)
     #dropout age feature
     patients_matrix_std = np.delete(patients_matrix_std, 18, 1)
     del features_dict['年龄']
-    save(patients_matrix_std, target, features_dict)
+    save(patients_matrix_std, target, features_dict, patients_matrix)
 
