@@ -44,18 +44,21 @@ class Classifier(object):
             target = pk.load(f)
             #features = pk.load(f)
             #randomly separate the patients matrix by row
-            randint = random.randint(0, 9)
-            x = patients_matrix_std[randint,:]
-            patients_matrix_std = np.delete(patients_matrix_std, randint, 0)
-            y = np.array(target[randint])
-            randint = random.randint(10, 19)
-            x = np.append(x, patients_matrix_std[randint,:])
-            patients_matrix_std = np.delete(patients_matrix_std, randint, 0)
-            y = np.append(y, target[randint])
-            randint = random.randint(20, 29)
-            x = np.append(x, patients_matrix_std[randint,:])
-            patients_matrix_std = np.delete(patients_matrix_std, randint, 0)
-            y = np.array(y, target[randint])        
+            randint_1 = random.randint(0, 9)
+            randint_2 = random.randint(10, 19)
+            randint_3 = random.randint(20, 29)
+            
+            x = patients_matrix_std[randint_1,:]            
+            y = np.array(target[randint_1])            
+            x = np.append(x, patients_matrix_std[randint_2,:])
+            y = np.append(y, target[randint_2])
+            x = np.append(x, patients_matrix_std[randint_3,:])
+            y = np.append(y, target[randint_3])   
+
+            patients_matrix_std = np.delete(patients_matrix_std, [randint_1, randint_2, randint_3], 0)
+            #patients_matrix_std = np.delete(patients_matrix_std, randint_2, 0)
+            #patients_matrix_std = np.delete(patients_matrix_std, randint_3, 0)
+            target = np.delete(target, [randint_1, randint_2, randint_3], 0)            
             
             col_len = len(x)/3
             x = x.reshape((3, col_len))
@@ -93,11 +96,10 @@ class Classifier(object):
             
             
             
-    def clssify(self):
+    def classify(self):
         '''
-        Parameters
-        ----------
-        x: a sample need to be clssified
+        using default classifiers to train and test  
+        
         Returns
         -------
         label: the array of predicted result        
@@ -105,18 +107,24 @@ class Classifier(object):
         
         if self.typeStr == 'NB':
             clf = BernoulliNB()
-            self.y_hat = clf.fit(self.X, self.Y)            
+            clf.fit(self.X, self.Y)  
+            self.y_hat = clf.predict(self.x)
         elif self.typeStr == 'Tree':
             clf = tree.DecisionTreeClassifier()
-            self.y_hat = clf.fit(self.X, self.Y)
+            clf.fit(self.X, self.Y)
+            self.y_hat = clf.predict(self.x)
             
-        return clf.predict(self.y_hat)            
+        return self.y_hat            
             
             
-    '''        
-    if __name__ == '__main__':
-        clf =         
-    '''        
+    def ensemble_classify(self):
+        '''
+        ensembling NB and Tree classifier for different feature of trainset
+        
+        Returns
+        -------
+        label: the array of predicted result        
+        '''        
             
                 
         
